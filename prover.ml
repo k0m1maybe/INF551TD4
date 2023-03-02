@@ -9,11 +9,11 @@ type ty =					(* simple type *)
 	| Tvar of tvar
 	| Imp of ty * ty
 	
-	| Prod of ty * ty 	(* 1.8 *)
+	| Prod of ty * ty 		(* 1.8 *)
 
 	| T						(* 1.9 *)
 	
-	| Coprod of ty * ty	(* 1.10 *)
+	| Coprod of ty * ty	 	(* 1.10 *)
 	
 	| F;; 					(* 1.11 *)
 
@@ -46,24 +46,24 @@ let rec string_of_ty ty = match ty with
 	
 	| T					-> "⊤"
 	
-	| Coprod (a, b)	->  "("^(string_of_ty a)^"\\/"^(string_of_ty b) ^ ")"
+	| Coprod (a, b)		->  "("^(string_of_ty a)^"\\/"^(string_of_ty b) ^ ")"
 
 	| F					-> "⊥";;
 
 let rec string_of_tm tm = match tm with
 	| Var x				-> x
 	| App (t, u)		-> "(" ^ (string_of_tm t) ^ " " ^ (string_of_tm u) ^ ")"
-	| Abs (x, a, t)	-> "(fun (" ^ x ^ " : " ^ (string_of_ty a) ^ " -> " ^ (string_of_tm t) ^ ")"
+	| Abs (x, a, t)		-> "(fun (" ^ x ^ " : " ^ (string_of_ty a) ^ " -> " ^ (string_of_tm t) ^ ")"
 	
 	| Pair (a, b)		-> "<" ^ (string_of_tm a) ^ "," ^(string_of_tm b) ^ ">"
 	| Proj1 t			-> "π₁(" ^ (string_of_tm t) ^ ")"
 	| Proj2 t			-> "π₂(" ^ (string_of_tm t) ^ ")"
 
-	| Union1 (a, t)	-> "ι₁" ^ "(" ^ (string_of_ty a) ^ ")(" ^ (string_of_tm t) ^ ")"
-	| Union2 (a, t)	-> "ι₂" ^ "(" ^ (string_of_ty a) ^ ")(" ^ (string_of_tm t) ^ ")"
+	| Union1 (a, t)		-> "ι₁" ^ "(" ^ (string_of_ty a) ^ ")(" ^ (string_of_tm t) ^ ")"
+	| Union2 (a, t)		-> "ι₂" ^ "(" ^ (string_of_ty a) ^ ")(" ^ (string_of_tm t) ^ ")"
 
 	| Truth				-> "<>"
-	| Absurd (a, t)	-> "case_" ^ "(" ^ (string_of_ty a) ^ ")" ^ "(" ^ (string_of_tm t) ^ ")"
+	| Absurd (a, t)		-> "case_" ^ "(" ^ (string_of_ty a) ^ ")" ^ "(" ^ (string_of_tm t) ^ ")"
 	
 	| Case (t, u, v)	-> "case(" ^ (string_of_tm t)  ^ "," ^ (string_of_tm u)^ "," ^ (string_of_tm v) ^ ")";;
 
@@ -85,7 +85,7 @@ let rec infer_type ctx tm = match tm with
 	| App (t, u) 		-> (
 		match infer_type ctx t with
 		| Imp (a, b) when infer_type ctx u = a	-> b
-		| _												-> raise Type_error
+		| _										-> raise Type_error
 		)
 	| Abs(x, a, t)		-> Imp (a , infer_type ((x, a) :: ctx) t)
 	
@@ -106,18 +106,18 @@ let rec infer_type ctx tm = match tm with
 	| Union2 (a, b)	-> Coprod (a,infer_type ctx b)
 	| Case (t, u, v)	-> (
 		match infer_type ctx t with
-      | Coprod (a, b)	->
+    	| Coprod (a, b)	->
 			let z = (
 				match infer_type ctx u with
 				| Imp (c, d) when c = a	-> d
-				| _							-> raise Type_error
-         ) in
-         let z1 = (
+				| _						-> raise Type_error
+         	) in
+        	 let z1 = (
 				match infer_type ctx v with
 				| Imp (c, d) when c = b -> d
-				| _							-> raise Type_error
-         ) in
-         if z = z1 then z else raise Type_error
+				| _						-> raise Type_error
+        	 ) in
+         	if z = z1 then z else raise Type_error
 		| _					-> raise Type_error
 		)
 	| Absurd (a,t)		-> check_type ctx t F; a
@@ -369,12 +369,12 @@ let rec prove env a =
 	| "exact"	-> let t = tm_of_string arg in
 		if infer_type env t <> a then error "Not the right type." else t
 
-	| "elim"		->																							(* 2.4 *)
+	| "elim"	->																							(* 2.4 *)
 		if arg = "" then error "Please provide an argument for elim." else (
 			match (List.assoc arg env) with
-			| Imp (u, v)		-> if v = a then let t = prove env u in App (Var arg, t)
+			| Imp (u, v)			-> if v = a then let t = prove env u in App (Var arg, t)
 										else error "Don't know how to eliminate this."
-			| Coprod (u, v)	-> let x1 = prove ((arg, u) :: env) a in  					(* 2.9 *)
+			| Coprod (u, v)			-> let x1 = prove ((arg, u) :: env) a in  					(* 2.9 *)
 										let x2 = prove ((arg, v) :: env) a in
 										Case (Var arg, Abs(arg, u, x1), Abs(arg, v, x2))
 			| F 					-> Absurd (a,Var arg) 												(* 2.10 *)
@@ -401,7 +401,7 @@ let rec prove env a =
 			| Coprod (c, d)	-> let x = prove env d in Union2(c,x)
 			| _ 					-> error "Don't know how to right this.")
 
-	| cmd			-> error ("Unknown command: " ^ cmd);;
+	| cmd		-> error ("Unknown command: " ^ cmd);;
 
 let () =
 	print_endline "Please enter the formula to prove:";
