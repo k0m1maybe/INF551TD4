@@ -5,7 +5,7 @@ type var = string;; 	(* term *)
 
 (* 1.1 *)
 
-type ty =					(* simple type *)
+type ty =				(* simple type *)
 	| Tvar of tvar
 	| Imp of ty * ty
 	
@@ -19,7 +19,7 @@ type ty =					(* simple type *)
 
 (* 1.2 *)
 
-type tm = (* λ-terms à la Church *)
+type tm =				(* λ-terms à la Church *)
 	| Var of var
 	| App of tm * tm
 	| Abs of var * ty * tm
@@ -97,13 +97,13 @@ let rec infer_type ctx tm = match tm with
 		)
 	| Proj2 t			-> (
 		match infer_type ctx t with
-      | Prod (_, x) 	-> x
-      | _				-> raise Type_error
-      )
+		| Prod (_, x) 	-> x
+		| _				-> raise Type_error
+     	)
 
 	| Truth				-> T     
-	| Union1 (a, b)	-> Coprod (infer_type ctx b,a)
-	| Union2 (a, b)	-> Coprod (a,infer_type ctx b)
+	| Union1 (a, b)		-> Coprod (infer_type ctx b,a)
+	| Union2 (a, b)		-> Coprod (a,infer_type ctx b)
 	| Case (t, u, v)	-> (
 		match infer_type ctx t with
     	| Coprod (a, b)	->
@@ -112,13 +112,13 @@ let rec infer_type ctx tm = match tm with
 				| Imp (c, d) when c = a	-> d
 				| _						-> raise Type_error
          	) in
-        	 let z1 = (
+        	let z1 = (
 				match infer_type ctx v with
 				| Imp (c, d) when c = b -> d
 				| _						-> raise Type_error
-        	 ) in
+        	) in
          	if z = z1 then z else raise Type_error
-		| _					-> raise Type_error
+		| _				-> raise Type_error
 		)
 	| Absurd (a,t)		-> check_type ctx t F; a
 and check_type ctx tm ty =
@@ -145,7 +145,7 @@ let peek_kwd s k = match Stream.peek s with
 	Some (Genlex.Kwd k') when k' = k -> let _ = Stream.next s in true | _ -> false;;
 	
 let stream_is_empty s =
-	try Stream.empty s; true with Stream.Failure	-> false;;
+	try Stream.empty s; true with Stream.Failure -> false;;
 
 let ident s = match Stream.next s with
 	| Genlex.Ident x	-> x
@@ -166,14 +166,14 @@ let ty_of_tk s =
 		if peek_kwd s "\\/" then Coprod (a, sum ()) else a
 	and base () =
 		match Stream.next s with
-		| Genlex.Ident x -> Tvar x
-		| Genlex.Kwd "(" ->
+		| Genlex.Ident x	-> Tvar x
+		| Genlex.Kwd "("	->
 			let a = ty () in must_kwd s ")"; a
-		| Genlex.Kwd "T" -> T
-		| Genlex.Kwd "_" -> F
-		| Genlex.Kwd "not" ->
+		| Genlex.Kwd "T"	-> T
+		| Genlex.Kwd "_" 	-> F
+		| Genlex.Kwd "not"	->
 			let a = base () in Imp (a, F)
-		| _ -> raise Parse_error
+		| _ 				-> raise Parse_error
 	in
 	ty ();;
 
@@ -200,7 +200,7 @@ let tm_of_tk s =
 			Abs (x, a, t)
 		)
 		else if peek_kwd s "case" then
-      (
+		(
 			let t = tm () in
 			must_kwd s "of";
 			let _ = ident s in
@@ -215,8 +215,8 @@ let tm_of_tk s =
 		else
 			base ()
 	and base () = match Stream.next s with
-		| Genlex.Ident x -> Var x
-		| Genlex.Kwd "(" ->
+		| Genlex.Ident x 		-> Var x
+		| Genlex.Kwd "(" 		->
 			if peek_kwd s ")" then Truth
 			else
 				let t = tm () in
@@ -229,40 +229,39 @@ let tm_of_tk s =
 					must_kwd s ")";
 					t
 					)
-		| Genlex.Kwd "fst" ->
+		| Genlex.Kwd "fst" 		->
 			must_kwd s "(";
 			let t = tm () in
 			must_kwd s ")";
 			Proj1 t
-		| Genlex.Kwd "snd" ->
+		| Genlex.Kwd "snd" 		->
 			must_kwd s "(";
 			let t = tm () in
 			must_kwd s ")";
 			Proj2 t
-		| Genlex.Kwd "left" ->
+		| Genlex.Kwd "left" 	->
 			must_kwd s "(";
 			let t = tm () in
 			must_kwd s ",";
 			let b = ty () in
 			must_kwd s ")";
 			Union1  (b,t)
-		| Genlex.Kwd "right" ->
+		| Genlex.Kwd "right" 	->
 			must_kwd s "(";
 			let a = ty () in
 			must_kwd s ",";
 			let t = tm () in
 			must_kwd s ")";
 			Union2 (a, t)
-		| Genlex.Kwd "absurd" ->
+		| Genlex.Kwd "absurd"	->
 			must_kwd s "(";
 			let t = tm () in
 			must_kwd s ",";
 			let a = ty () in
 			must_kwd s ")";
 			Absurd (a, t)
-		| _ -> raise Parse_error
-  in
-  tm ();;
+		| _						-> raise Parse_error
+	in tm ();;
 
 let ty_of_string a = ty_of_tk (lexer (Stream.of_string a));;
 
@@ -273,11 +272,11 @@ let tm_of_string t = tm_of_tk (lexer (Stream.of_string t));;
 let () =
 	let l = [
 		"A => B";
-      "A /\\ B";
-      "T";
-      "A \\/ B";
-      "_";
-      "not A"
+      	"A /\\ B";
+      	"T";
+      	"A \\/ B";
+      	"_";
+      	"not A"
 	]
 	in
 	List.iter (fun s -> Printf.printf "the parsing of %S is %s\n%!" s (string_of_ty (ty_of_string s))) l;;
@@ -285,15 +284,15 @@ let () =
 let () =
 	let l = [
 		"t u";
-      "fun (x : A) -> t";
-      "(t , u)";
-      "fst(t)";
-      "snd(t)";
-      "()";
-      "case t of x -> u | y -> v";
-      "left(t,B)";
-      "right(A,t)";
-      "absurd(t,A)"
+      	"fun (x : A) -> t";
+      	"(t , u)";
+      	"fst(t)";
+      	"snd(t)";
+      	"()";
+      	"case t of x -> u | y -> v";
+      	"left(t,B)";
+      	"right(A,t)";
+      	"absurd(t,A)"
 	] in
 	List.iter (fun s -> Printf.printf "the parsing of %S is %s\n%!" s (string_of_tm (tm_of_string s))) l;;
 
@@ -304,7 +303,7 @@ let () =
 
 let rec string_of_ctx ctx =
 	match ctx with
-	| [] 				-> ""
+	| [] 			-> ""
 	| [(x, a)] 		-> x ^ " : " ^(string_of_ty a)
 	| (x, a) :: l	-> (string_of_ctx l) ^ " , " ^ x ^ " : " ^ (string_of_ty a);;
 
@@ -341,7 +340,7 @@ let rec prove env a =
 				let x = arg in
 				let t = prove ((x,a)::env) b in
 				Abs (x, a, t)
-		| Prod (t1,t2) ->																					(* 2.7 *)
+		| Prod (t1,t2)	->																					(* 2.7 *)
 			if arg = "" then
 				let a1 = prove env t1 in
 				let a2 = prove env t2 in
@@ -355,14 +354,14 @@ let rec prove env a =
 		if arg = "" then error "Please provide an argument for fst." else (
 			match (List.assoc arg env) with
 			| Prod (x, y) when x = a	-> Proj1 (Var arg)
-			| _								-> error "Don't know how to fst this."
+			| _							-> error "Don't know how to fst this."
 			)
 
 	| "snd"		->																							(* 2.7 *)
 		if arg = "" then error "Please provide an argument for snd." else (
 			match (List.assoc arg env) with
-			| Prod (x, y) when y = a   -> Proj2 (Var arg)
-			| _								-> error "Don't know how to snd this."
+			| Prod (x, y) when y = a	-> Proj2 (Var arg)
+			| _							-> error "Don't know how to snd this."
 			)   
 
 
@@ -393,13 +392,15 @@ let rec prove env a =
 		if arg <> "" then error "wrong command of left." else (
 			match a with
 			| Coprod (c, d)	-> let x = prove env c in Union1(d, x)
-			| _					-> error "Don't know how to left this.")
+			| _					-> error "Don't know how to left this."
+			)
 
 	| "right" 	->																							(* 2.9 *)
 		if arg <> "" then error "wrong command of right." else (
 			match a with
 			| Coprod (c, d)	-> let x = prove env d in Union2(c,x)
-			| _ 					-> error "Don't know how to right this.")
+			| _ 					-> error "Don't know how to right this."
+			)
 
 	| cmd		-> error ("Unknown command: " ^ cmd);;
 
